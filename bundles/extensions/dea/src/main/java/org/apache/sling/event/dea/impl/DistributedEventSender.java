@@ -25,20 +25,20 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ValueMap;
+import org.apache.sling.api.resource.observation.ResourceChange;
+import org.apache.sling.api.resource.observation.ResourceChangeListener;
+import org.apache.sling.api.resource.observation.ResourceChange.ChangeType;
 import org.apache.sling.event.dea.DEAConstants;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.osgi.service.event.EventConstants;
-import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  */
 public class DistributedEventSender
-    implements EventHandler {
+    implements ResourceChangeListener {
 
     /** Default logger. */
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -89,11 +89,11 @@ public class DistributedEventSender
                 props.put(Constants.SERVICE_VENDOR, "The Apache Software Foundation");
 
                 // listen for all resource added OSGi events in the DEA area
-                props.put(EventConstants.EVENT_TOPIC, SlingConstants.TOPIC_RESOURCE_ADDED);
-                props.put(EventConstants.EVENT_FILTER, "(path=" + rootPath + "/*)");
+                props.put(ResourceChangeListener.CHANGES, ChangeType.ADDED.toString());
+                props.put(ResourceChangeListener.PATHS, rootPath + "/*");
 
                 final ServiceRegistration reg =
-                        bundleContext.registerService(new String[] {EventHandler.class.getName()},
+                        bundleContext.registerService(new String[] {ResourceChangeListener.class.getName()},
                         DistributedEventSender.this, props);
 
                 DistributedEventSender.this.serviceRegistration = reg;
@@ -134,7 +134,7 @@ public class DistributedEventSender
     private Event readEvent(final Resource eventResource) {
         try {
             final ValueMap vm = ResourceHelper.getValueMap(eventResource);
-            final String topic = vm.get(EventConstants.EVENT_TOPIC, String.class);
+            final String topic = vm.get(ResourceChangeListener.CHANGES, String.class);
             if ( topic == null ) {
                 // no topic should never happen as we check the resource type before
                 logger.error("Unable to read distributed event from " + eventResource.getPath() + " : no topic property available.");
@@ -144,7 +144,7 @@ public class DistributedEventSender
                 @SuppressWarnings("unchecked")
                 final List<Exception> readErrorList = (List<Exception>) properties.remove(ResourceHelper.PROPERTY_MARKER_READ_ERROR_LIST);
                 if ( readErrorList == null ) {
-                    properties.remove(EventConstants.EVENT_TOPIC);
+                    properties.remove(ResourceChangeListener.CHANGES);
                     properties.remove(DEAConstants.PROPERTY_DISTRIBUTE);
                     final Object oldRT = properties.remove("event.dea." + ResourceResolver.PROPERTY_RESOURCE_TYPE);
                     if ( oldRT != null ) {
@@ -216,22 +216,21 @@ public class DistributedEventSender
             }
         }
     }
-
-    /**
-     * @see org.osgi.service.event.EventHandler#handleEvent(org.osgi.service.event.Event)
-     */
+    
     @Override
-    public void handleEvent(final Event event) {
-        final String path = (String) event.getProperty(SlingConstants.PROPERTY_PATH);
-        if ( !path.startsWith(this.ownRootPathWithSlash) ) {
-            try {
-                this.queue.put(path);
-            } catch (final InterruptedException ex) {
-                this.ignoreException(ex);
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
+	public void onChange(List<ResourceChange> resourceChanges) {
+    	for(ResourceChange resourceChange : resourceChanges) {
+    		final String path = resourceChange.getPath();
+    		if ( !path.startsWith(this.ownRootPathWithSlash) ) {
+                try {
+                    this.queue.put(path);
+                } catch (final InterruptedException ex) {
+                    this.ignoreException(ex);
+                    Thread.currentThread().interrupt();
+                }
+            }    		
+    	}		
+	}
 
     /**
      * Helper method which just logs the exception in debug mode.
