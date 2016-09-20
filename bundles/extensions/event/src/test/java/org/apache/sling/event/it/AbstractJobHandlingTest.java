@@ -49,6 +49,7 @@ import org.apache.sling.event.jobs.consumer.JobExecutor;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -129,50 +130,52 @@ public abstract class AbstractJobHandlingTest {
 
                 // infrastructure
                 mavenBundle("org.apache.felix", "org.apache.felix.http.servlet-api", "1.1.2"),
-                mavenBundle("org.apache.felix", "org.apache.felix.eventadmin", "1.4.4"),
-                mavenBundle("org.apache.felix", "org.apache.felix.scr", "2.0.2"),
-                mavenBundle("org.apache.felix", "org.apache.felix.configadmin", "1.8.8"),
+                mavenBundle("org.apache.felix", "org.apache.felix.eventadmin", "1.4.6"),
+                mavenBundle("org.apache.felix", "org.apache.felix.scr", "2.0.6"),
+                mavenBundle("org.apache.felix", "org.apache.felix.configadmin", "1.8.10"),
                 mavenBundle("org.apache.felix", "org.apache.felix.inventory", "1.0.4"),
                 mavenBundle("org.apache.felix", "org.apache.felix.metatype", "1.1.2"),
 
                 // sling
                 mavenBundle("org.apache.sling", "org.apache.sling.settings", "1.3.8"),
-                mavenBundle("org.apache.sling", "org.apache.sling.commons.osgi", "2.3.0"),
-                mavenBundle("org.apache.sling", "org.apache.sling.commons.json", "2.0.16"),
+                mavenBundle("org.apache.sling", "org.apache.sling.commons.osgi", "2.4.0"),
+                mavenBundle("org.apache.sling", "org.apache.sling.commons.json", "2.0.18"),
                 mavenBundle("org.apache.sling", "org.apache.sling.commons.mime", "2.1.8"),
                 mavenBundle("org.apache.sling", "org.apache.sling.commons.classloader", "1.3.2"),
-                mavenBundle("org.apache.sling", "org.apache.sling.commons.scheduler", "2.4.14"),
-                mavenBundle("org.apache.sling", "org.apache.sling.commons.threads", "3.2.4"),
+                mavenBundle("org.apache.sling", "org.apache.sling.commons.scheduler", "2.5.0"),
+                mavenBundle("org.apache.sling", "org.apache.sling.commons.threads", "3.2.6"),
 
-                mavenBundle("org.apache.sling", "org.apache.sling.auth.core", "1.3.12"),
-                mavenBundle("org.apache.sling", "org.apache.sling.discovery.api", "1.0.2"),
-                mavenBundle("org.apache.sling", "org.apache.sling.discovery.standalone", "1.0.2"),
-
-                mavenBundle("org.apache.sling", "org.apache.sling.api", "2.9.0"),
-                mavenBundle("org.apache.sling", "org.apache.sling.resourceresolver", "1.2.6"),
-                mavenBundle("org.apache.sling", "org.apache.sling.adapter", "2.1.2"),
-                mavenBundle("org.apache.sling", "org.apache.sling.jcr.resource", "2.5.6"),
+                mavenBundle("org.apache.sling", "org.apache.sling.auth.core", "1.3.16"),
+                mavenBundle("org.apache.sling", "org.apache.sling.discovery.api", "1.0.4"),
+                mavenBundle("org.apache.sling", "org.apache.sling.discovery.standalone", "1.0.2"),                
+                mavenBundle("org.apache.sling", "org.apache.sling.api", "2.14.0"),
+                mavenBundle("org.apache.sling", "org.apache.sling.resourceresolver", "1.4.19-SNAPSHOT"),
+                mavenBundle("org.apache.sling", "org.apache.sling.adapter", "2.1.8"),
+                mavenBundle("org.apache.sling", "org.apache.sling.jcr.resource", "2.8.1-SNAPSHOT"),
                 mavenBundle("org.apache.sling", "org.apache.sling.jcr.classloader", "3.2.2"),
-                mavenBundle("org.apache.sling", "org.apache.sling.jcr.contentloader", "2.1.8"),
-                mavenBundle("org.apache.sling", "org.apache.sling.engine", "2.3.6"),
+                mavenBundle("org.apache.sling", "org.apache.sling.jcr.contentloader", "2.1.10"),
+                mavenBundle("org.apache.sling", "org.apache.sling.engine", "2.4.6"),
                 mavenBundle("org.apache.sling", "org.apache.sling.serviceusermapper", "1.2.2"),
 
                 mavenBundle("org.apache.sling", "org.apache.sling.jcr.jcr-wrapper", "2.0.0"),
-                mavenBundle("org.apache.sling", "org.apache.sling.jcr.api", "2.3.0"),
-                mavenBundle("org.apache.sling", "org.apache.sling.jcr.base", "2.3.0"),
-                mavenBundle("org.apache.jackrabbit", "jackrabbit-api", "2.10.1"),
-                mavenBundle("org.apache.jackrabbit", "jackrabbit-jcr-commons", "2.10.1"),
-                mavenBundle("org.apache.jackrabbit", "jackrabbit-spi", "2.10.1"),
-                mavenBundle("org.apache.jackrabbit", "jackrabbit-spi-commons", "2.10.1"),
-                mavenBundle("org.apache.jackrabbit", "jackrabbit-jcr-rmi", "2.10.1"),
+                mavenBundle("org.apache.sling", "org.apache.sling.jcr.api", "2.4.0"),
+                mavenBundle("org.apache.sling", "org.apache.sling.jcr.base", "2.4.0"),
+                mavenBundle("org.apache.jackrabbit", "jackrabbit-api", "2.11.2"),
+                mavenBundle("org.apache.jackrabbit", "jackrabbit-jcr-commons", "2.11.2"),
+                mavenBundle("org.apache.jackrabbit", "jackrabbit-spi", "2.11.2"),
+                mavenBundle("org.apache.jackrabbit", "jackrabbit-spi-commons", "2.11.2"),
+                mavenBundle("org.apache.jackrabbit", "jackrabbit-jcr-rmi", "2.11.2"),
                 mavenBundle("org.apache.derby", "derby", "10.5.3.0_1"),
                 mavenBundle("org.apache.sling", "org.apache.sling.jcr.jackrabbit.server", "2.3.0"),
 
                 mavenBundle("org.apache.sling", "org.apache.sling.testing.tools", "1.0.6"),
                 mavenBundle("org.apache.httpcomponents", "httpcore-osgi", "4.1.2"),
                 mavenBundle("org.apache.httpcomponents", "httpclient-osgi", "4.1.2"),
-
+                
+                mavenBundle("com.google.guava", "guava", "15.0"),
+                
                 mavenBundle("org.apache.sling", "org.apache.sling.discovery.commons", "1.0.12"),
+                /*new VMOption("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000"),*/
 
                 // SLING-5560: delaying start of the sling.event bundle to
                 // ensure the parameter 'startup.delay' is properly set to 1sec
@@ -180,6 +183,7 @@ public abstract class AbstractJobHandlingTest {
                 // which will cause the tests to fail
                 // @see setup() where the bundle is finally started - after reconfig
                 CoreOptions.bundle( bundleFile.toURI().toString() ).start(false),
+                /*new VMOption("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000"),*/
 
                 junitBundles()
            );
