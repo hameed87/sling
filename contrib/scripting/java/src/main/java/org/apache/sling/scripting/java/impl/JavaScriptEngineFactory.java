@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -36,12 +37,14 @@ import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
-import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingException;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingIOException;
 import org.apache.sling.api.SlingServletException;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.observation.ResourceChange;
+import org.apache.sling.api.resource.observation.ResourceChange.ChangeType;
+import org.apache.sling.api.resource.observation.ResourceChangeListener;
 import org.apache.sling.api.scripting.SlingBindings;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.api.scripting.SlingScriptConstants;
@@ -51,8 +54,6 @@ import org.apache.sling.scripting.api.AbstractScriptEngineFactory;
 import org.apache.sling.scripting.api.AbstractSlingScriptEngine;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,11 +69,13 @@ import org.slf4j.LoggerFactory;
     @Property(name=JavaScriptEngineFactory.PROPERTY_COMPILER_SOURCE_V_M, value=JavaScriptEngineFactory.VERSION_AUTO),
     @Property(name=JavaScriptEngineFactory.PROPERTY_COMPILER_TARGET_V_M, value=JavaScriptEngineFactory.VERSION_AUTO),
     @Property(name=JavaScriptEngineFactory.PROPERTY_CLASSDEBUGINFO, boolValue=true),
-    @Property(name=JavaScriptEngineFactory.PROPERTY_ENCODING, value="UTF-8")
+    @Property(name=JavaScriptEngineFactory.PROPERTY_ENCODING, value="UTF-8"),
+    @Property(name = ResourceChangeListener.CHANGES, value = {"CHANGED","REMOVED"}),
+    @Property(name = ResourceChangeListener.PATHS, value = {"glob:."}, propertyPrivate = true)
 })
 public class JavaScriptEngineFactory
     extends AbstractScriptEngineFactory
-    implements EventHandler {
+    implements ResourceChangeListener {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -159,12 +162,11 @@ public class JavaScriptEngineFactory
 
         // register event handler
         final Dictionary<String, String> props = new Hashtable<String, String>();
-        props.put("event.topics","org/apache/sling/api/resource/*");
         props.put("service.description","Java Servlet Script Modification Handler");
         props.put("service.vendor","The Apache Software Foundation");
 
         this.eventHandlerRegistration = componentContext.getBundleContext()
-                  .registerService(EventHandler.class.getName(), this, props);
+                  .registerService(ResourceChangeListener.class.getName(), this, props);
         logger.info("Activating Apache Sling Script Engine for Java with options {}", opts);
     }
 
@@ -249,16 +251,17 @@ public class JavaScriptEngineFactory
         return wrapper;
     }
 
-    /**
-     * @see org.osgi.service.event.EventHandler#handleEvent(org.osgi.service.event.Event)
-     */
-    public void handleEvent(Event event) {
-        if ( SlingConstants.TOPIC_RESOURCE_CHANGED.equals(event.getTopic()) ) {
-            this.handleModification((String)event.getProperty(SlingConstants.PROPERTY_PATH), false);
-        } else if ( SlingConstants.TOPIC_RESOURCE_REMOVED.equals(event.getTopic()) ) {
-            this.handleModification((String)event.getProperty(SlingConstants.PROPERTY_PATH), true);
-        }
-    }
+    @Override
+	public void onChange(List<ResourceChange> resourceChange) {
+		for(ResourceChange change : resourceChange){
+			ChangeType topic = change.getType();
+			if (topic.equals(ChangeType.CHANGED)) {
+				this.handleModification(change.getPath(), false);
+			} else if (topic.equals(ChangeType.REMOVED)){
+				this.handleModification(change.getPath(), true);
+			}
+		}		
+	}
 
     private void handleModification(final String scriptName, final boolean remove) {
         this.ioProvider.getServletCache().removeWrapper(scriptName);
@@ -282,5 +285,5 @@ public class JavaScriptEngineFactory
             }
             return null;
         }
-    }
+    }	
 }
